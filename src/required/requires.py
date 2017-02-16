@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from copy import deepcopy
 from collections import defaultdict
 
-from .expression import RExpression
+from .expressions import RExpression
 
 
 class Requires(object):
