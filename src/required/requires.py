@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from copy import deepcopy
 from collections import defaultdict
+from functools import wraps
 
 from .expressions import RExpression
 
@@ -69,7 +70,7 @@ class Requires(object):
                 deps.extend(child_deps)
         return deps
 
-    def validate(self, key, data):
+    def _validate(self, key, data):
         for dep_key in self.deps(key, data.get(key, self.empty)):
             if isinstance(dep_key, tuple):
                 dep_key, dep_value = dep_key
@@ -81,6 +82,19 @@ class Requires(object):
                 if not dep_value(data):
                     raise RequirementError(dep_value.error(key, dep_key, data))
 
+    def validate(self, data):
+        for key in data.keys():
+            self._validate(key, data)
+
 
 class RequirementError(Exception):
     pass
+
+def validate(requires):
+    def validate_decorator(func):
+        @wraps(func)
+        def func_wrapper(*args, **kwargs):
+            requires.validate(kwargs)
+            return func(*args, **kwargs)
+        return func_wrapper
+    return validate_decorator
