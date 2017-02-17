@@ -91,8 +91,19 @@ class Eq(GenericOp):
     error_msg = "{key} requires {dep} to be equal to {value}"
 
 
-class Not(RExpression):
-    pass
+class Lt(GenericOp):
+    op = operator.lt
+    error_msg = "{key} requires {dep} to be less than {value}"
+
+
+class Gt(GenericOp):
+    op = operator.lt
+    error_msg = "{key} requires {dep} to be greater than {value}"
+
+
+class NotEq(GenericOp):
+    op = operator.ne
+    error_msg = "{key} requires {dep} not be {value}"
 
 
 class R(object):
@@ -112,5 +123,5 @@ class R(object):
     def __eq__(self, other):
         return Eq(self, other)
 
-    def not_(self):
-        return Not(self)
+    def __ne__(self, other):
+        return NotEq(self, other)
