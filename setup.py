@@ -68,7 +68,7 @@ if __name__ == "__main__":
         maintainer=find_meta("author"),
         maintainer_email=find_meta("email"),
         keywords=KEYWORDS,
-        long_description=read("README.rst"),
+        long_description=read("README.md"),
         packages=PACKAGES,
         package_dir={"": "src"},
         zip_safe=False,
