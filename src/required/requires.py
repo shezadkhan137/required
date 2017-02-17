@@ -7,61 +7,14 @@ from collections import defaultdict
 from .expressions import RExpression
 
 
+class Empty(object):
+    def __repr__(self):
+        return "<empty>"
+
+
 class Requires(object):
     """
-    Helper class which provides a nice way to express
-    argument dependencies. Made for our Search API but can be
-    extended to anything which needs argument dependencies checking.
-
-    Args:
-        ...
-        from_ (str, dict): from_ is the name of the argument which you want to express
-                           the dependency for. If it is a string, it means that any value
-                           of the argument requires the dependency. If it is a dict, it is
-                           of the form '{argument: value}' where the dependency is only valid
-                           if the the argument is equal to value. Value must be a hashable type.
-
-        deps (tuple): Tuple passed in as *args of names of dependencies for the argument
-        partial_deps: Dict passed in as **kwargs describes partial depenedencies where the
-                      argument is valid only for those dependencies. dict key is the dependency
-                      name and dict value is any callable which takes the argument value and
-                      dependency value as params. See example for this to be more clear
-
-    Example:
-
-        rq = Requires("radius", "location") +
-        Requires("location", entity=Any(ObjectType.VENUE, ObjectType.EVENT)) +
-        Requires({"sort": "distance"}, entity=Any(ObjectType.EVENT, ObjectType.VENUE)) +
-
-        Rq has a dependency graph which looks like:
-
-                               +------------------+
-                               |                  |
-                               |       ENTITY     |
-                           +--->  (Venue, Event)  <-----+
-                           |   |                  |     |
-                           |   +------------------+     |
-                           |                            |
-                          +----------+     +----------------+
-                          |          |     |                |
-                     +----> Location |     | SORT = distance|
-                     |    |          |     |                |
-                     |    +----------+     +----------------+
-              +--------+
-              |        |
-              | Radius |
-              |        |
-              +--------+
-
-        This is the same as:
-            * Radius requires Location
-            * Location requires entities of (Venue OR Event)
-            * Sort=distance requires entities of (Venue OR Event)
     """
-
-    class Empty(object):
-        def __repr__(self):
-            return "<empty>"
 
     empty = Empty()
 
@@ -103,6 +56,10 @@ class Requires(object):
         # use of seen so we terminate and don't blow the stack
         seen = seen if seen else set()
         seen.add(key)
+
+        if key not in self.adj:
+            return []
+
         rels = self.adj[key] + self.adj[(key, value)] if key in self._from_keys else self.adj[key]
         deps = []
         for dep in rels:
@@ -113,7 +70,7 @@ class Requires(object):
         return deps
 
     def validate(self, key, data):
-        for dep_key in self.deps(key, data[key]):
+        for dep_key in self.deps(key, data.get(key, self.empty)):
             if isinstance(dep_key, tuple):
                 dep_key, dep_value = dep_key
             else:
