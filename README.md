@@ -31,7 +31,7 @@ RequirementError: x requires x to be less than or equal to y
 
 >>> @validate(Requires("x", R("y") >= R("x")) + Requires("z", R("y") <= R("z")))
 ... def z_must_be_gte_y_and_y_must_gte_x(x,y,z):
-...     return x,y,y
+...     return x,y,z
 
 >>> z_must_be_gte_y_and_y_must_gte_x(x=1, y=2, z=1)
 RequirementError: z requires y to be less than or equal to z
@@ -39,5 +39,19 @@ RequirementError: z requires y to be less than or equal to z
 
 ### Caveats
 
-The validation is done through dictionary types. Therefore all parameters to your function
+* The validation is done through dictionary types. Therefore all parameters to your function
 must be passed as **kwargs, *args are unchecked.
+
+* Currently this is still in the early stages and so most likely have bugs. YMMV
+
+* Only a limited number of expressions are currently supported
+
+* Only simple comparison operations are supported
+
+### TODO
+
+* Add more expression operators
+
+* Add support for more complex expressions
+
+* Add tests for partial dependencies
