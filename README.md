@@ -8,7 +8,15 @@ required: A Easy Dependency Validator
 * In a API where you may have a number of optional query parameters, that are only valid under some permutations 
 * Functions which receive **kwargs but need to validate that it is correct 
 
-Some examples to make it a bit more clear:
+### Installation
+
+Install using `pip`
+
+```
+pip install required
+```
+
+### Examples
 
 ```python
 
