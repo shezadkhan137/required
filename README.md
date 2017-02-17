@@ -19,4 +19,6 @@ from required import Requires, R, RequirementError, validate
 @validate(Requires("x", "y"))
 def some_function(x=None, y=None):
     pass
+
+some_function(x=1)  # RequirementError: x requires 'y' to be present
 ```

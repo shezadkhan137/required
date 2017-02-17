@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from .requires import Requires, RequirementError
+from .requires import Requires, RequirementError, validate
 from .expressions import R
 
 __version__ = "0.1.0.dev1"
@@ -19,5 +19,6 @@ __copyright__ = "Copyright (c) 2017 Shezad Khan"
 __all__ = [
     "Requires",
     "RequirementError",
-    "R"
+    "R",
+    "validate"
 ]
