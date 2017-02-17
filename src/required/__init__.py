@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, print_function
 from .requires import Requires, RequirementError, validate
 from .expressions import R
 
-__version__ = "0.1.0.dev1"
+__version__ = "0.1.1"
 
 __title__ = "required"
 __description__ = "A easy dependency validator"

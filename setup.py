@@ -10,7 +10,7 @@ from setuptools import setup, find_packages
 NAME = "required"
 PACKAGES = find_packages(where="src")
 META_PATH = os.path.join("src", "required", "__init__.py")
-KEYWORDS = ["dependency", "check", "graph"]
+KEYWORDS = ["dependency", "validator"]
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
