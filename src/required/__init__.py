@@ -2,11 +2,11 @@ from __future__ import absolute_import, division, print_function
 
 from .requires import Requires
 
-__version__ = "0.1.0.dev0"
+__version__ = "0.1.0.dev1"
 
 __title__ = "required"
-__description__ = "Easy dependency checker"
-__uri__ = "https://required.readthedocs.io/"
+__description__ = "A easy dependency validator"
+__uri__ = "https://github.com/shezadkhan137/required"
 __doc__ = __description__ + " <" + __uri__ + ">"
 
 __author__ = "Shezad Khan"

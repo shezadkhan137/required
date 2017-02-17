@@ -1,3 +1,2 @@
-=====================================
-required: Easy dependency validator 
+required: A Easy Dependency Validator 
 =====================================
