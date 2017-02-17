@@ -1,4 +1,4 @@
-include *.rst *.txt LICENSE
+include *.rst README.md *.txt LICENSE
 recursive-include tests *.py
 recursive-include docs *.rst
 recursive-include docs *.py
