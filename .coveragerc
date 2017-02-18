@@ -1,0 +1,12 @@
+[run]
+branch = True
+source =
+    required 
+
+[paths]
+source =
+   src/required
+   .tox/*/lib/python*/site-packages/required
+
+[report]
+show_missing = True

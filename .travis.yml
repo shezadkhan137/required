@@ -1,9 +1,9 @@
 sudo: false
+language: python
+
 cache:
   directories:
     - $HOME/.cache/pip
-
-language: python
 
 matrix:
   include:
@@ -21,4 +21,5 @@ notifications:
   email: false
 
 after_success:
-  coveralls
+  - tox -e coverage-report
+  - coveralls
