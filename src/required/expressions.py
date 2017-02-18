@@ -97,7 +97,7 @@ class Lt(GenericOp):
 
 
 class Gt(GenericOp):
-    op = operator.lt
+    op = operator.gt
     error_msg = "{key} requires {dep} to be greater than {value}"
 
 
