@@ -8,7 +8,7 @@ required: A Easy Dependency Validator
 * In a API where you may have a number of optional query parameters, that are only valid under some permutations 
 * Functions which receive **kwargs but need to validate that it is correct 
 
-### Installation
+## Installation
 
 Install using `pip`
 
@@ -16,50 +16,67 @@ Install using `pip`
 pip install required
 ```
 
-### Examples
+## Examples
+
+### Basic Dependencies
+
+Say you have a function which takes two optional arguments, however, the first one `x` is only valid when `y` has been passed. You could eaily express this with:
+
+```python
+from required import Requires, R, validate
+
+x_requires_y = Requires("x", "y")
+@validate(x_requires_y)
+def fn1(x=None, y=None):
+    return x,y
+
+fn1(x=1)  # RequirementError: x requires 'y' to be present
+fn1(x=1, y=1)  # (1,1)
+```
+
+### Expression Dependencies
+
+Thats a contrived example you say?! Ok, something a little bit more complex. 
+You have a function which takes two arguments `v` and `w`, but `v` is only valid when the value of `v` is less than `w`.
+
+```python
+v_less_than_w = Requires("v", R("v") <= R("w"))
+
+@validate(v_less_than_w)
+def fn2(v, w):
+   return v,w
+
+fn2(v=3, w=2)  # RequirementError: x requires x to be less than or equal to y
+fn2(v=1, w=2)  # (1,2)
+```
+
+### Combined Dependencies 
+Yes, but what if I have more than one constraint I hear you say? Well, yes, thats ok too. 
+Imagine a function which takes `x`, `y`,`z`. `x` requires `y` to be greater than `x` and `z` requires `y` to be less than `z`
 
 ```python
 
->>> from required import Requires, R, validate
->>> @validate(Requires("x", "y"))
-... def some_function(x=None, y=None):
-...     pass
+x_less_than_y = Requires("x", R("y") >= R("x"))
+y_less_than_z = Requires("z", R("y") <= R("z"))
 
->>> some_function(x=1)
-RequirementError: x requires 'y' to be present
+@validate(x_less_than_y + y_less_than_z)
+def fn3(x,y,z):
+    return x,y,z
 
-
->>> @validate(Requires("x", R("x") <= R("y")))
-... def x_must_be_less_or_equals_to_y(x, y):
-...     return x,y
-
->>> x_must_be_less_or_equals_to_y(x=3, y=2)
-RequirementError: x requires x to be less than or equal to y
-
-
->>> @validate(Requires("x", R("y") >= R("x")) + Requires("z", R("y") <= R("z")))
-... def z_must_be_gte_y_and_y_must_gte_x(x,y,z):
-...     return x,y,z
-
->>> z_must_be_gte_y_and_y_must_gte_x(x=1, y=2, z=1)
-RequirementError: z requires y to be less than or equal to z
+fn3(x=1, y=2, z=1)  # RequirementError: z requires y to be less than or equal to z
+fn3(x=1, y=2, z=3)  # (1,2,3)
 ```
 
-### Caveats
+## Caveats
 
 * The validation is done through dictionary types. Therefore all parameters to your function
 must be passed as **kwargs, *args are unchecked.
-
 * Currently this is still in the early stages and so most likely have bugs. YMMV
-
 * Only a limited number of expressions are currently supported
-
 * Only simple comparison operations are supported
 
-### TODO
+## TODO
 
 * Add more expression operators
-
 * Add support for more complex expressions
-
 * Add tests for partial dependencies
