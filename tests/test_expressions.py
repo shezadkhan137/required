@@ -2,7 +2,8 @@
 from __future__ import unicode_literals
 
 from required.expressions import (
-    R, Lte, Lt, Gte, Gt, Eq, NotEq
+    R, Lte, Lt, Gte, Gt, Eq, NotEq,
+    In
 )
 
 
@@ -55,3 +56,15 @@ class TestOperators(object):
         assert op({"x": 1, "y": 2})
         assert op({"x": 2, "y": 1})
         assert not op({"x": 1, "y": 1})
+
+    def test_in_operator(self):
+        field = R("x")
+        values = (1, 2, 3)
+        op = In(field, values)
+        assert op({"x": 1})
+        assert not op({"x": 10})
+
+        values = R("y")
+        op = In(field, values)
+        assert op({"x": 1, "y": (1, 2, 3)})
+        assert not op({"x": 10, "y": (1, 2, 3)})

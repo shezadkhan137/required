@@ -14,21 +14,22 @@ class RExpression(object):
 
     def _resolve(self, val, data):
         if isinstance(val, R):
-            return data.get(val.field, None)
+            return data[val.field]
         return val
 
 
 class In(RExpression):
 
-    def __init__(self, field, *values):
+    def __init__(self, field, values):
         self.field = field
         self.values = values
 
     def __call__(self, data):
-        value = self._resolve(self.field, data)
-        if isinstance(value, list) or isinstance(value, tuple):
-            return not set(value).isdisjoint(set(self.values))
-        return value in self.values
+        field = self._resolve(self.field, data)
+        values = self._resolve(self.values, data)
+        if isinstance(field, list) or isinstance(field, tuple):
+            return not set(field).isdisjoint(set(values))
+        return field in values
 
     def get_fields(self):
         return {

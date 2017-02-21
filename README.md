@@ -1,7 +1,7 @@
 required: A Easy Dependency Validator 
 =====================================
 
-[![Build Status](https://travis-ci.org/shezadkhan137/required.svg?branch=master)](https://travis-ci.org/shezadkhan137/required) [![Coverage Status](https://coveralls.io/repos/github/shezadkhan137/required/badge.svg?branch=master)](https://coveralls.io/github/shezadkhan137/required?branch=master)
+[![PyPI](https://img.shields.io/pypi/v/required.svg)](https://pypi.python.org/pypi/required) [![Build Status](https://travis-ci.org/shezadkhan137/required.svg?branch=master)](https://travis-ci.org/shezadkhan137/required) [![Coverage Status](https://coveralls.io/repos/github/shezadkhan137/required/badge.svg?branch=master)](https://coveralls.io/github/shezadkhan137/required?branch=master)
 
 `required` is a simple Python package which allows you to validate function argument dependencies in situations where there are a large number of optional parameters. Places where you may have this are:
 
