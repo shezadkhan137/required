@@ -7,7 +7,7 @@ from required.expressions import (
 )
 
 
-class TestOperators(object):
+class TestComparisonOperators(object):
 
     def test_lte_operator(self):
         lhs = R("x")

@@ -14,7 +14,7 @@ class RExpression(object):
 
     def _resolve(self, val, data):
         if isinstance(val, R):
-            return data[val.field]
+            return val._resolve(data)
         return val
 
 
@@ -32,19 +32,20 @@ class In(RExpression):
         return field in values
 
     def get_fields(self):
-        return {
-            item.field
-            for item in (self.field, self.values)
-            if isinstance(item, R)
-        }
+        fields = set()
+        for item in (self.field, self.values):
+            if isinstance(item, R):
+                for field in item.get_fields():
+                    fields.add(field)
+        return fields
 
     def error(self, key, dep_key, data):
         dep = self.field.field if isinstance(self.field, R) else self.field
         if len(self.values) == 1:
             return "{key} requires {dep} to be {values}".format(
-                key=key, dep=dep, values=" or ".join(self.values))
+                key=key, dep=dep, values=" or ".join(map(str, self.values)))
         return "{key} requires {dep} to be either {values}".format(
-            key=key, dep=dep, values=" or ".join(self.values))
+            key=key, dep=dep, values=" or ".join(map(str, self.values)))
 
 
 class GenericOp(RExpression):
@@ -70,11 +71,12 @@ class GenericOp(RExpression):
         return self.error_msg.format(key=key, dep=dep, value=value)
 
     def get_fields(self):
-        return {
-            item.field
-            for item in (self.lhs, self.rhs)
-            if isinstance(item, R)
-        }
+        fields = set()
+        for item in (self.lhs, self.rhs):
+            if isinstance(item, R):
+                for field in item.get_fields():
+                    fields.add(field)
+        return fields
 
 
 class Lte(GenericOp):
@@ -112,11 +114,24 @@ class R(object):
     def __init__(self, field):
         self.field = field
 
+    def get_fields(self):
+        if isinstance(self.field, FieldOp):
+            return self.field.get_fields()
+        return {self.field}
+
+    def _resolve(self, data):
+        if isinstance(self.field, FieldOp):
+            return self.field._resolve(data)
+        return data[self.field]
+
     def in_(self, *container):
         return In(self, *container)
 
     def __le__(self, other):
         return Lte(self, other)
+
+    def __lt__(self, other):
+        return Lt(self, other)
 
     def __ge__(self, other):
         return Gte(self, other)
@@ -126,3 +141,48 @@ class R(object):
 
     def __ne__(self, other):
         return NotEq(self, other)
+
+    # Arithmetic operators
+
+    def __add__(self, other):
+        fieldop = FieldOp(operator.add, self, other)
+        return R(fieldop)
+
+    def __sub__(self, other):
+        fieldop = FieldOp(operator.sub, self, other)
+        return R(fieldop)
+
+    def __mul__(self, other):
+        fieldop = FieldOp(operator.mul, self, other)
+        return R(fieldop)
+
+    def __div__(self, other):
+        fieldop = FieldOp(operator.div, self, other)
+        return R(fieldop)
+
+    def __truediv__(self, other):
+        fieldop = FieldOp(operator.truediv, self, other)
+        return R(fieldop)
+
+    def __pow__(self, other):
+        fieldop = FieldOp(operator.pow, self, other)
+        return R(fieldop)
+
+
+class FieldOp(object):
+
+    def __init__(self, operator, *args):
+        self.operator = operator
+        self.args = args
+
+    def get_fields(self):
+        fields = set()
+        for arg in self.args:
+            if isinstance(arg, R):
+                for field in arg.get_fields():
+                    fields.add(field)
+        return fields
+
+    def _resolve(self, data):
+        resolved_args = tuple((arg._resolve(data) if isinstance(arg, R) else arg for arg in self.args))
+        return self.operator(*resolved_args)

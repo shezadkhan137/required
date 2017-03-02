@@ -106,3 +106,94 @@ class TestRequires(object):
 
         data = {"x": 1, "y": 2, "z": 3}
         requires.validate(data)
+
+    def test_hybrid_with_two_r_expressions_add(self):
+        requires = Requires("x", R("y") + R("x") == 1)
+        data = {"x": 1, "y": 0}
+        requires.validate(data)
+
+        data = {"x": 1, "y": 1}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+    def test_hybrid_with_one_r_expression_add(self):
+        requires = Requires("x", R("x") < R("y") + 1)
+        data = {"x": 0.5, "y": 0}
+        requires.validate(data)
+
+        data = {"x": 1, "y": 1}
+        requires.validate(data)
+
+        data = {"x": 2, "y": 1}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+    def test_hybrid_with_complex_add_both_sides(self):
+        req = R("x") + 1 == R("y") + 2
+        requires = Requires("x", req)
+        data = {"x": 1, "y": 0}
+        requires.validate(data)
+
+        data = {"x": 1, "y": 1}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+    def test_hybrid_with_complex_sub_both_sides(self):
+        req = R("x") - R("y") == 0
+        requires = Requires("x", req)
+        data = {"x": 1, "y": 1}
+        requires.validate(data)
+
+        data = {"x": -1, "y": 1}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+    def test_hybrid_with_complex_mul_both_sides(self):
+        req = R("x") * 2 == R("y") * 4
+        requires = Requires("x", req)
+        data = {"x": 2, "y": 1}
+        requires.validate(data)
+
+        data = {"x": -1, "y": 1}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+    def test_hybrid_with_complex_pow_both_sides(self):
+        req = R("x") ** 2 == R("y") ** 4
+        requires = Requires("x", req)
+        data = {"x": 1, "y": 1}
+        requires.validate(data)
+
+        data = {"x": 2, "y": 1}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+    def test_hybrid_with_complex_div_both_sides(self):
+        req = R("x") == R("y") / 2
+        requires = Requires("x", req)
+        data = {"x": 4, "y": 8}
+        requires.validate(data)
+
+        data = {"x": 2, "y": 1}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+    def test_r_in_method_checks_value_in_list(self):
+        req = R("y").in_([1, 2])
+        requires = Requires("x", req)
+        data = {"x": 4, "y": 1}
+        requires.validate(data)
+
+        data = {"x": 2, "y": 10}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+    def test_r_in_method_checks_value_in_single_list(self):
+        req = R("y").in_([1])
+        requires = Requires("x", req)
+        data = {"x": 4, "y": 1}
+        requires.validate(data)
+
+        data = {"x": 2, "y": 10}
+        with pytest.raises(RequirementError):
+            requires.validate(data)

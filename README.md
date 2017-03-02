@@ -67,6 +67,17 @@ fn3(x=1, y=2, z=1)  # RequirementError: z requires y to be less than or equal to
 fn3(x=1, y=2, z=3)  # (1,2,3)
 ```
 
+### Arithmetic with R objects
+```python
+y_must_be_zero = Requires("x", R("y") + R("x") == R("x"))
+@validate(y_must_be_zero)
+def fn4(x,y):
+    return x,y
+
+fn4(x=1, y=2)  # RequirementError
+fn4(x=1, y=0)  # (0, 1)
+```
+
 ## Caveats
 
 * The validation is done through dictionary types. Therefore all parameters to your function
