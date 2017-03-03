@@ -111,7 +111,6 @@ TODO
 
 -  Add more expression operators
 -  Add support for more complex expressions
--  Add tests for partial dependencies
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/required.svg
    :target: https://pypi.python.org/pypi/required

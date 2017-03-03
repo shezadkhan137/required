@@ -54,14 +54,22 @@ class Requires(object):
 
     def deps(self, key, value, seen=None):
         # DFS of the dependency graph
+
+        partial_key = (key, value) if key in self._from_keys else None
+
         # use of seen so we terminate and don't blow the stack
         seen = seen if seen else set()
-        seen.add(key)
+        seen.add(partial_key or key)
 
-        if key not in self.adj:
+        if key not in self.adj and partial_key is None:
+            # key has no dependencies or partial dependencies
             return []
 
-        rels = self.adj[key] + self.adj[(key, value)] if key in self._from_keys else self.adj[key]
+        full_rels = self.adj.get(key, ())
+        partial_rels = self.adj.get(partial_key, ()) if partial_key is not None else ()
+
+        rels = list(full_rels) + list(partial_rels)
+
         deps = []
         for dep in rels:
             if dep not in seen:
