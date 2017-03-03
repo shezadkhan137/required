@@ -25,7 +25,7 @@ class Requires(object):
         if isinstance(from_, dict):
             # partial on the from_ value
             assert len(from_) == 1, "from_ must be len 1"
-            from_ = from_.items()[0]
+            from_ = list(from_.items())[0]
             self._from_keys.add(from_[0])
 
         rexpressions = [dep for dep in deps if isinstance(dep, RExpression)]
@@ -43,7 +43,7 @@ class Requires(object):
 
     def __add__(self, other):
         assert isinstance(other, Requires)
-        combined = self.adj.items() + other.adj.items()
+        combined = list(self.adj.items()) + list(other.adj.items())
         d = defaultdict(list)
         for key, value in combined:
             d[key].extend(list(value))
