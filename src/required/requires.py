@@ -19,7 +19,7 @@ class Requires(object):
 
     empty = Empty()
 
-    def __init__(self, from_, *deps):
+    def __init__(self, from_, dep):
         # process from_ partial
         self._from_keys = set()
         if isinstance(from_, dict):
@@ -28,18 +28,15 @@ class Requires(object):
             from_ = list(from_.items())[0]
             self._from_keys.add(from_[0])
 
-        rexpressions = [dep for dep in deps if isinstance(dep, RExpression)]
-        deps = [dep for dep in deps if not isinstance(dep, RExpression)]
-
-        partial_deps = {}
-        for rexpression in rexpressions:
-            dep_names = rexpression.get_fields() - {from_}
+        if isinstance(dep, RExpression):
+            # Complex dependency
+            dep_names = dep.get_fields() - {from_}
             assert len(dep_names) == 1, "Currently do not support complex dependencies in expressions"
             dep_name = list(dep_names)[0]
-            partial_deps[dep_name] = rexpression
-
-        assert set(deps).isdisjoint(set(partial_deps.keys())), "Cannot have full dep and partial dep"
-        self.adj = {from_: tuple(deps) + tuple(partial_deps.items())}
+            self.adj = {from_: ((dep_name, dep),)}
+        else:
+            # Full dependency
+            self.adj = {from_: (dep,)}
 
     def __add__(self, other):
         assert isinstance(other, Requires)
