@@ -136,6 +136,9 @@ class R(object):
     def __ge__(self, other):
         return Gte(self, other)
 
+    def __gt__(self, other):
+        return Gt(self, other)
+
     def __eq__(self, other):
         return Eq(self, other)
 

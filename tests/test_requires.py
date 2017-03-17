@@ -248,3 +248,12 @@ class TestRequires(object):
 
         data = {"x": 2, "z": "hello"}
         requires.validate(data)
+
+    def test_simple_self_dependency(self):
+        requires = Requires("x", R("x") > 1)
+        data = {"x": 1}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+        data = {"x": 2}
+        requires.validate(data)

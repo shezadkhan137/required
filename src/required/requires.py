@@ -31,12 +31,14 @@ class Requires(object):
         if isinstance(dep, RExpression):
             # Complex dependency
             dep_names = dep.get_fields() - {from_}
-            assert len(dep_names) == 1, "Currently do not support complex dependencies in expressions"
-            dep_name = list(dep_names)[0]
-            self.adj = {from_: ((dep_name, dep),)}
-        else:
-            # Full dependency
-            self.adj = {from_: (dep,)}
+            assert len(dep_names) <= 1, "Currently do not support complex dependencies in expressions"
+            if len(dep_names) == 1:
+                dep_name = list(dep_names)[0]
+                self.adj = {from_: ((dep_name, dep),)}
+                return
+
+        # Full dependency or self ref
+        self.adj = {from_: (dep,)}
 
     def __add__(self, other):
         assert isinstance(other, Requires)
@@ -79,6 +81,8 @@ class Requires(object):
         for dep_key in self.deps(key, data.get(key, self.empty)):
             if isinstance(dep_key, tuple):
                 dep_key, dep_value = dep_key
+            elif isinstance(dep_key, RExpression):
+                dep_key, dep_value = key, dep_key
             else:
                 dep_value = self.empty
             if dep_key not in data:
