@@ -28,7 +28,7 @@ CLASSIFIERS = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-INSTALL_REQUIRES = []
+INSTALL_REQUIRES = ["six"]
 
 ###################################################################
 

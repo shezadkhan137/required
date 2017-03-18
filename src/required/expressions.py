@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import six
 import operator
 
 
@@ -66,8 +67,8 @@ class GenericOp(RExpression):
         return self.get_operator()(lhs_value, rhs_value)
 
     def error(self, key, dep_key, data):
-        dep = self.lhs.field if isinstance(self.lhs, R) else self.lhs
-        value = self.rhs.field if isinstance(self.rhs, R) else self.rhs
+        dep = self.lhs.error() if isinstance(self.lhs, R) else self.lhs
+        value = self.rhs.error() if isinstance(self.rhs, R) else self.rhs
         return self.error_msg.format(key=key, dep=dep, value=value)
 
     def get_fields(self):
@@ -118,6 +119,11 @@ class R(object):
         if isinstance(self.field, FieldOp):
             return self.field.get_fields()
         return {self.field}
+
+    def error(self):
+        if isinstance(self.field, FieldOp):
+            return "({error})".format(error=self.field.error())
+        return self.field
 
     def _resolve(self, data):
         if isinstance(self.field, FieldOp):
@@ -174,6 +180,16 @@ class R(object):
 
 class FieldOp(object):
 
+    div_op = operator.div if six.PY2 else operator.truediv
+
+    OP_LOOKUP = {
+        operator.add: "+",
+        operator.sub: "-",
+        operator.mul: "*",
+        operator.pow: "**",
+        div_op: "/",
+    }
+
     def __init__(self, operator, *args):
         self.operator = operator
         self.args = args
@@ -189,3 +205,15 @@ class FieldOp(object):
     def _resolve(self, data):
         resolved_args = tuple((arg._resolve(data) if isinstance(arg, R) else arg for arg in self.args))
         return self.operator(*resolved_args)
+
+    def error(self):
+        assert len(self.args) == 2
+        lhs = self.args[0]
+        rhs = self.args[1]
+        lhs_error = lhs.error() if isinstance(lhs, R) else lhs
+        rhs_error = rhs.error() if isinstance(rhs, R) else rhs
+        return "{lhs} {op} {rhs}".format(
+            lhs=lhs_error,
+            op=self.OP_LOOKUP.get(self.operator, "<op>"),
+            rhs=rhs_error,
+        )
