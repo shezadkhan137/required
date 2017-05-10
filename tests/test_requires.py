@@ -199,7 +199,7 @@ class TestRequires(object):
             requires.validate(data)
 
     def test_partial_dependency_simple_present(self):
-        requires = Requires({"x": 1}, "y")
+        requires = Requires(R("x") == 1, "y")
         data = {"x": 1}
         with pytest.raises(RequirementError):
             requires.validate(data)
@@ -209,7 +209,7 @@ class TestRequires(object):
 
     def test_partial_dependency_simple_in(self):
         req = R("y").in_([1])
-        requires = Requires({"x": 1}, req)
+        requires = Requires(R("x") == 1, req)
         data = {"x": 1}
         with pytest.raises(RequirementError):
             requires.validate(data)
@@ -221,8 +221,36 @@ class TestRequires(object):
         data = {"x": 1, "y": 1}
         requires.validate(data)
 
+    def test_partial_dependency_with_full(self):
+        req = R("y") == 1
+        partial = Requires(R("x") == 1, req)
+        full = Requires("x", "z")
+        requires = partial + full
+
+        data = {"x": 10}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+        data = {"x": 10, "z": 5}
+        requires.validate(data)
+
+        data = {"x": 1, "z": 5}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+    def test_expression_partial_dependency(self):
+        partial = ((R("x") ** 2) * 10) == 40
+        requires = Requires(partial, "y")
+
+        data = {"x": 10}
+        requires.validate(data)
+
+        data = {"x": 2}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
     def test_multi_partial_dependency_simple_all_satisifed(self):
-        requires = Requires({"x": 1}, "y") + Requires({"x": 2}, "z")
+        requires = Requires(R("x") == 1, "y") + Requires(R("x") == 2, "z")
 
         data = {"x": 1}
         with pytest.raises(RequirementError):

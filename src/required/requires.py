@@ -22,11 +22,12 @@ class Requires(object):
     def __init__(self, from_, dep):
         # process from_ partial
         self._from_keys = set()
-        if isinstance(from_, dict):
+        if isinstance(from_, RExpression):
             # partial on the from_ value
-            assert len(from_) == 1, "from_ must be len 1"
-            from_ = list(from_.items())[0]
-            self._from_keys.add(from_[0])
+            from_names = from_.get_fields()
+            assert len(from_names) == 1, "from_ must only contain one field"
+            from_name = list(from_names)[0]
+            self._from_keys.add(from_name)
 
         if isinstance(dep, RExpression):
             # Complex dependency
@@ -64,10 +65,20 @@ class Requires(object):
             # key has no dependencies or partial dependencies
             return []
 
-        full_rels = self.adj.get(key, ())
-        partial_rels = self.adj.get(partial_key, ()) if partial_key is not None else ()
+        rels = self.adj.get(key, list())
 
-        rels = list(full_rels) + list(partial_rels)
+        if partial_key:
+            # We need to resolve the partial dependency
+            # to see if it is valid.
+            lookup = dict((partial_key,))
+            partial_rels = []
+            for exp in self.adj.keys():
+                if isinstance(exp, RExpression):
+                    if exp(lookup):
+                        dependencies_from_partial = self.adj.get(exp)
+                        for dep in dependencies_from_partial:
+                            partial_rels.append(dep)
+            rels.extend(partial_rels)
 
         deps = []
         for dep in rels:

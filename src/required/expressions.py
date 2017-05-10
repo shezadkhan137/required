@@ -18,6 +18,12 @@ class RExpression(object):
             return val._resolve(data)
         return val
 
+    def __hash__(self):
+        raise NotImplementedError
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
 
 class In(RExpression):
 
@@ -47,6 +53,9 @@ class In(RExpression):
                 key=key, dep=dep, values=" or ".join(map(str, self.values)))
         return "{key} requires {dep} to be either {values}".format(
             key=key, dep=dep, values=" or ".join(map(str, self.values)))
+
+    def __hash__(self):
+        return hash(self.field) + sum(map(hash, self.values))
 
 
 class GenericOp(RExpression):
@@ -78,6 +87,9 @@ class GenericOp(RExpression):
                 for field in item.get_fields():
                     fields.add(field)
         return fields
+
+    def __hash__(self):
+        return hash(self.lhs) + hash(self.rhs) + hash(self.get_operator())
 
 
 class Lte(GenericOp):
@@ -177,6 +189,9 @@ class R(object):
         fieldop = FieldOp(operator.pow, self, other)
         return R(fieldop)
 
+    def __hash__(self):
+        return hash(self.field)
+
 
 class FieldOp(object):
 
@@ -217,3 +232,6 @@ class FieldOp(object):
             op=self.OP_LOOKUP.get(self.operator, "<op>"),
             rhs=rhs_error,
         )
+
+    def __hash__(self):
+        return hash(self.operator) + sum(map(hash, self.args))
