@@ -101,10 +101,6 @@ Caveats
 -  The validation is done through dictionary types. Therefore all
    parameters to your function must be passed as \*\*kwargs, \*args are
    unchecked.
--  Currently this is still in the early stages and so most likely have
-   bugs. YMMV
--  Only a limited number of expressions are currently supported
--  Only simple comparison operations are supported
 
 TODO
 ----
