@@ -285,3 +285,24 @@ class TestRequires(object):
 
         data = {"x": 2}
         requires.validate(data)
+
+    def test_simple_length_equals(self):
+        requires = Requires("x", R("x").length() == 1)
+        data = {"x": []}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+        data = {"x": [1]}
+        requires.validate(data)
+
+    def test_hybrid_length_both_sides(self):
+        requires = Requires(
+            "x", R("x").length() + 1 == R("y").length() - 2
+        )
+
+        data = {"x": [1, 1], "y": [1, 2]}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+        data = {"x": [1], "y": [1, 1, 1, 1]}
+        requires.validate(data)

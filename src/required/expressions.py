@@ -189,6 +189,10 @@ class R(object):
         fieldop = FieldOp(operator.pow, self, other)
         return R(fieldop)
 
+    def length(self):
+        fieldop = FieldOp(len, self)
+        return R(fieldop)
+
     def __hash__(self):
         return hash(self.field)
 
@@ -222,16 +226,25 @@ class FieldOp(object):
         return self.operator(*resolved_args)
 
     def error(self):
-        assert len(self.args) == 2
-        lhs = self.args[0]
-        rhs = self.args[1]
-        lhs_error = lhs.error() if isinstance(lhs, R) else lhs
-        rhs_error = rhs.error() if isinstance(rhs, R) else rhs
-        return "{lhs} {op} {rhs}".format(
-            lhs=lhs_error,
-            op=self.OP_LOOKUP.get(self.operator, "<op>"),
-            rhs=rhs_error,
-        )
+        if len(self.args) == 2:
+            lhs = self.args[0]
+            rhs = self.args[1]
+            lhs_error = lhs.error() if isinstance(lhs, R) else lhs
+            rhs_error = rhs.error() if isinstance(rhs, R) else rhs
+            return "{lhs} {op} {rhs}".format(
+                lhs=lhs_error,
+                op=self.OP_LOOKUP.get(self.operator, "<op>"),
+                rhs=rhs_error,
+            )
+
+        arg_errors = map(self.resolve_error, self.args)
+        return "{op}({args})".format(
+                op=self.OP_LOOKUP.get(self.operator, self.operator.__name__),
+                args=",".join(arg_errors),
+            )
+
+    def resolve_error(self, arg):
+        return arg.error() if isinstance(arg, R) else arg
 
     def __hash__(self):
         return hash(self.operator) + sum(map(hash, self.args))
