@@ -1,14 +1,21 @@
 import pytest
 
 from required import Requires, R, RequirementError
+from hypothesis import given
+from hypothesis.strategies import data, integers
 
 
 class TestRequires(object):
 
-    def test_value_no_dependency_does_not_raise_error(self):
-        requires = Requires("x", "y")
-        data = {"x": 1}
-        requires._validate("y", data)
+    @given(data())
+    def test_value_no_dependency_does_not_raise_error(self, draw):
+        requires = Requires("x", R("x") < R("y"))
+
+        x = draw.draw(integers())
+        y = draw.draw(integers(min_value=x+1))
+
+        data = {"x": x, "y": y}
+        requires.validate(data)
 
     def test_exists_dependency_raises_requirements_error(self):
         requires = Requires("x", "y")
@@ -66,19 +73,24 @@ class TestRequires(object):
         data = {"x": 1, "y": 1}
         requires._validate("x", data)
 
-    def test_simple_expression_dependency_greater_or_equal(self):
+    @given(data())
+    def test_simple_expression_dependency_greater_or_equal(self, draw):
         requires = Requires("x", R("y") >= 1)
-        data = {"x": 1, "y": 0}
+
+        x = draw.draw(integers())
+        y = draw.draw(integers(max_value=0))
+
+        data = {"x": x, "y": y}
         with pytest.raises(RequirementError):
             requires._validate("x", data)
 
-        data = {"x": 1, "y": 1}
+        x = draw.draw(integers())
+        y = draw.draw(integers(min_value=1))
+
+        data = {"x": x, "y": y}
         requires._validate("x", data)
 
-        data = {"x": 1, "y": 2}
-        requires._validate("x", data)
-
-        data = {"y": 2}
+        data = {"y": x}
         requires._validate("y", data)
 
     def test_multi_expression_dependency_correctly_validates(self):
@@ -277,13 +289,17 @@ class TestRequires(object):
         data = {"x": 2, "z": "hello"}
         requires.validate(data)
 
-    def test_simple_self_dependency(self):
+    @given(data())
+    def test_simple_self_dependency(self, draw):
         requires = Requires("x", R("x") > 1)
-        data = {"x": 1}
+
+        x = draw.draw(integers(max_value=1))
+        data = {"x": x}
         with pytest.raises(RequirementError):
             requires.validate(data)
 
-        data = {"x": 2}
+        x = draw.draw(integers(min_value=2))
+        data = {"x": x}
         requires.validate(data)
 
     def test_simple_length_equals(self):
