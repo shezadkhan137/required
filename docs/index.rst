@@ -6,9 +6,16 @@
 Welcome to required's documentation!
 ====================================
 
+
+.. include:: ../README.rst
+
+Read More
+---------
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+
+    examples
 
 
 
