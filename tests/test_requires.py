@@ -306,3 +306,13 @@ class TestRequires(object):
 
         data = {"x": [1], "y": [1, 1, 1, 1]}
         requires.validate(data)
+
+    def test_self_dependency_complex_partial(self):
+        requires = Requires(R("x") == 1, R("x") / 1 == 2)
+        data = {"x": 1}
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+        requires = Requires(R("x") + 1 == 1, R("x") + 1 / 1 == 1)
+        data = {"x": 0}
+        requires.validate(data)

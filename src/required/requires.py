@@ -13,33 +13,63 @@ class Empty(object):
         return "<empty>"
 
 
+empty = Empty()
+
+
+class Dependency(object):
+    def __init__(self, name, expression=None, message=None):
+        self.name = name
+        self.expression = expression
+        self.message = message
+
+    def get_key(self):
+        return self.name
+
+    def get_value(self):
+        return self.expression or empty
+
+    def get_error_message(self):
+        return self.message
+
+
 class Requires(object):
     """
     """
 
-    empty = Empty()
+    empty = empty
 
-    def __init__(self, from_, dep):
+    def __init__(self, from_, dep, message=None):
         # process from_ partial
         self._from_keys = set()
+        from_name = self._get_from_name(from_)
+        if from_name:
+            self._from_keys.add(from_name)
+
+        dep_obj = self._get_dep_object(from_, dep, message)
+        self.adj = {from_: (dep_obj, )}
+
+    def _get_from_name(self, from_):
         if isinstance(from_, RExpression):
             # partial on the from_ value
             from_names = from_.get_fields()
             assert len(from_names) == 1, "from_ must only contain one field"
             from_name = list(from_names)[0]
-            self._from_keys.add(from_name)
+            return from_name
+        return None
 
+    def _get_dep_object(self, from_, dep, message):
         if isinstance(dep, RExpression):
             # Complex dependency
             dep_names = dep.get_fields() - {from_}
             assert len(dep_names) <= 1, "Currently do not support complex dependencies in expressions"
             if len(dep_names) == 1:
                 dep_name = list(dep_names)[0]
-                self.adj = {from_: ((dep_name, dep),)}
-                return
-
-        # Full dependency or self ref
-        self.adj = {from_: (dep,)}
+                # expression dependecy
+                return Dependency(name=dep_name, expression=dep, message=message)
+            # self expression depedency
+            return Dependency(name=from_, expression=dep, message=message)
+        # flat full dependency
+        return Dependency(name=dep, message=message)
 
     def __add__(self, other):
         assert isinstance(other, Requires)
@@ -89,18 +119,17 @@ class Requires(object):
         return deps
 
     def _validate(self, key, data):
-        for dep_key in self.deps(key, data.get(key, self.empty)):
-            if isinstance(dep_key, tuple):
-                dep_key, dep_value = dep_key
-            elif isinstance(dep_key, RExpression):
-                dep_key, dep_value = key, dep_key
-            else:
-                dep_value = self.empty
+        for dep in self.deps(key, data.get(key, self.empty)):
+
+            dep_key = dep.get_key()
+            dep_value = dep.get_value()
+
             if dep_key not in data:
                 raise RequirementError("%s requires '%s' to be present" % (key, dep_key))
             if dep_value is not self.empty:
                 if not dep_value(data):
-                    raise RequirementError(dep_value.error(key, dep_key, data))
+                    error_message = dep.get_error_message() or dep_value.error(key, dep_key, data)
+                    raise RequirementError(error_message)
 
     def validate(self, data):
         for key in data.keys():
