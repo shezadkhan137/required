@@ -118,18 +118,29 @@ class Requires(object):
                 deps.extend(child_deps)
         return deps
 
-    def _validate(self, key, data):
-        for dep in self.deps(key, data.get(key, self.empty)):
+    def _validate(self, field, data):
+        for dependency in self.deps(field, data.get(field, self.empty)):
 
-            dep_key = dep.get_key()
-            dep_value = dep.get_value()
+            dependency_name = dependency.get_key()
+            dependency_value = dependency.get_value()
 
-            if dep_key not in data:
-                raise RequirementError("%s requires '%s' to be present" % (key, dep_key))
-            if dep_value is not self.empty:
-                if not dep_value(data):
-                    error_message = dep.get_error_message() or dep_value.error(key, dep_key, data)
-                    raise RequirementError(error_message)
+            if dependency_name not in data:
+                raise RequirementError(
+                    field,
+                    dependency_name,
+                    None,
+                    "%s requires '%s' to be present" % (field, dependency_name)
+                )
+
+            if dependency_value is not self.empty:
+                if not dependency_value(data):
+                    error_message = dependency.get_error_message() or dependency_value.error(field, dependency_name, data)
+                    raise RequirementError(
+                        field,
+                        dependency_name,
+                        dependency_value,
+                        error_message
+                    )
 
     def validate(self, data):
         for key in data.keys():
@@ -137,7 +148,13 @@ class Requires(object):
 
 
 class RequirementError(Exception):
-    pass
+
+    def __init__(self, field=None, dependency_name=None, dependency_value=None, *args, **kwargs):
+        super(RequirementError, self).__init__(*args, **kwargs)
+        self.field = field
+        self.dependency_name = dependency_name
+        self.dependency_value = dependency_value
+
 
 def validate(requires):
     def validate_decorator(func):
