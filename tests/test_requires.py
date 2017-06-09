@@ -2,7 +2,18 @@ import pytest
 
 from required import Requires, R, RequirementError
 from hypothesis import given
-from hypothesis.strategies import data, integers
+from hypothesis.strategies import (
+    data, integers, one_of, booleans,
+    floats, complex_numbers, tuples,
+    none, lists, sets, fixed_dictionaries,
+    characters, text, binary,
+)
+
+all_types = (
+    integers(), none(),
+    floats(), complex_numbers(), tuples(),
+    characters(), text(), binary(), booleans(),
+)
 
 
 class TestRequires(object):
@@ -17,15 +28,17 @@ class TestRequires(object):
         data = {"x": x, "y": y}
         requires.validate(data)
 
-    def test_exists_dependency_raises_requirements_error(self):
+    @given(one_of(*all_types))
+    def test_exists_dependency_raises_requirements_error(self, item):
         requires = Requires("x", "y")
-        data = {"x": 1}
+        data = {"x": item}
         with pytest.raises(RequirementError):
             requires._validate("x", data)
 
-    def test_triple_dependency_raises_correct_error(self):
+    @given(one_of(*all_types))
+    def test_triple_dependency_raises_correct_error(self, item):
         requires = Requires("x", "y") + Requires("y", "z")
-        data = {"x": 1}
+        data = {"x": item}
 
         with pytest.raises(RequirementError):
             requires._validate("x", data)
@@ -35,42 +48,45 @@ class TestRequires(object):
 
         requires._validate("z", data)
 
-    def test_multiple_dependencies_requires_all(self):
+    @given(one_of(*all_types), one_of(*all_types), one_of(*all_types))
+    def test_multiple_dependencies_requires_all(self, x, y, z):
         requires = Requires("x", "y") + Requires("x", "z")
-        data = {"x": 1, "y": 2}
+        data = {"x": x, "y": y}
 
         with pytest.raises(RequirementError):
             requires._validate("x", data)
 
-        data = {"x": 1, "z": 2}
+        data = {"x": x, "z": z}
         with pytest.raises(RequirementError):
             requires._validate("x", data)
 
-        data = {"x": 1, "z": 2, "y": 2}
+        data = {"x": x, "z": y, "y": z}
         requires._validate("x", data)
 
-    def test_circular_dependency_requires_both(self):
+    @given(one_of(*all_types), one_of(*all_types))
+    def test_circular_dependency_requires_both(self, x, y):
         requires = Requires("x", "y") + Requires("y", "x")
 
-        data = {"x": 1}
+        data = {"x": x}
         with pytest.raises(RequirementError):
             requires._validate("x", data)
 
-        data = {"y": 1}
+        data = {"y": y}
         with pytest.raises(RequirementError):
             requires._validate("y", data)
 
-        data = {"x": 1, "y": 2}
+        data = {"x": x, "y": y}
         requires._validate("y", data)
         requires._validate("x", data)
 
-    def test_simple_expression_dependency_equal(self):
-        requires = Requires("x", R("y") == 1)
-        data = {"x": 1, "y": 2}
+    @given(one_of(*all_types), integers())
+    def test_simple_expression_dependency_equal(self, x, y):
+        requires = Requires("x", R("y") == y)
+        data = {"x": x, "y": y + 1}
         with pytest.raises(RequirementError):
             requires._validate("x", data)
 
-        data = {"x": 1, "y": 1}
+        data = {"x": x, "y": y}
         requires._validate("x", data)
 
     @given(data())
@@ -93,10 +109,11 @@ class TestRequires(object):
         data = {"y": x}
         requires._validate("y", data)
 
-    def test_multi_expression_dependency_correctly_validates(self):
-        requires = Requires("x", R("y") >= 1) + Requires("z", R("y") <= 1)
+    @given(integers(), integers(), integers(), integers())
+    def test_multi_expression_dependency_correctly_validates(self, x, y, z, gte):
+        requires = Requires("x", R("y") >= gte) + Requires("z", R("y") <= gte)
 
-        data = {"x": 1, "y": 2, "z": 1}
+        data = {"x": x, "y": gte + 1, "z": z}
 
         with pytest.raises(RequirementError):
             requires._validate("z", data)
@@ -104,7 +121,7 @@ class TestRequires(object):
         requires._validate("x", data)
         requires._validate("y", data)
 
-        data = {"x": 1, "y": 1, "z": 1}
+        data = {"x": gte, "y": gte, "z": gte}
         requires._validate("z", data)
 
     def test_multi_r_in_expression_correctly_validates(self):
