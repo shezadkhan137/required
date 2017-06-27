@@ -249,3 +249,7 @@ class FieldOp(object):
 
     def __hash__(self):
         return hash(self.operator) + sum(map(hash, self.args))
+
+
+def Func(func, *args):
+    return R(FieldOp(func, *args))

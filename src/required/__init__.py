@@ -1,7 +1,7 @@
 from __future__ import absolute_import, division, print_function
 
 from .requires import Requires, RequirementError, validate
-from .expressions import R
+from .expressions import R, Func
 
 __version__ = "0.3.1"
 
@@ -20,6 +20,7 @@ __all__ = [
     "Requires",
     "RequirementError",
     "R",
+    "Func",
     "empty",
     "validate",
 ]
