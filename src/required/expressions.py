@@ -48,11 +48,12 @@ class In(RExpression):
 
     def error(self, key, dep_key, data):
         dep = self.field.field if isinstance(self.field, R) else self.field
-        if len(self.values) == 1:
+        values = self._resolve(self.values, data)
+        if len(values) == 1:
             return "{key} requires {dep} to be {values}".format(
-                key=key, dep=dep, values=" or ".join(map(str, self.values)))
+                key=key, dep=dep, values=" or ".join(map(str, values)))
         return "{key} requires {dep} to be either {values}".format(
-            key=key, dep=dep, values=" or ".join(map(str, self.values)))
+            key=key, dep=dep, values=" or ".join(map(str, values)))
 
     def __hash__(self):
         return hash(self.field) + sum(map(hash, self.values))

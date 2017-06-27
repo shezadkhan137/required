@@ -316,3 +316,13 @@ class TestRequires(object):
         requires = Requires(R("x") + 1 == 1, R("x") + 1 / 1 == 1)
         data = {"x": 0}
         requires.validate(data)
+
+    def test_field_required_in_another_field(self):
+        requires = Requires(R("x"), R("x").in_(R("y")))
+        data = {"x": 1, "y": []}
+
+        with pytest.raises(RequirementError):
+            requires.validate(data)
+
+        data = {"x": 1, "y": [1, 2]}
+        requires.validate(data)
