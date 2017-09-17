@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
-from .requires import Requires, RequirementError, validate
+from .requires import Requires, RequirementError, validate, empty
 from .expressions import R, Func
 
 __version__ = "0.3.2"
