@@ -4,6 +4,11 @@ import re
 
 from setuptools import setup, find_packages
 
+try:
+    import pypandoc
+except (IOError, ImportError):
+    pypandoc = None
+
 
 ###################################################################
 
@@ -72,7 +77,7 @@ if __name__ == "__main__":
         maintainer=find_meta("author"),
         maintainer_email=find_meta("email"),
         keywords=KEYWORDS,
-        long_description=read("README.rst"),
+        long_description=pypandoc.convert(read("README.md"), to="rst", format="markdown_github") if pypandoc else "",
         packages=PACKAGES,
         package_dir={"": "src"},
         zip_safe=False,
