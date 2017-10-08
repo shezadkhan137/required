@@ -4,9 +4,9 @@
 [![Build Status](https://travis-ci.org/shezadkhan137/required.svg?branch=master)](https://travis-ci.org/shezadkhan137/required)
 [![Coverage Status](https://coveralls.io/repos/github/shezadkhan137/required/badge.svg?branch=master)](https://coveralls.io/github/shezadkhan137/required?branch=master)
 
-Required is a simple libaray which allows you to validate dependencies
+Required is a simple library which allows you to validate dependencies
 across multiple fields. The goal is to make writing things like Forms
-and Seralizers much easier by providing a declariative way to encode
+and Seralizers much easier by providing a declarative way to encode
 your complex validation logic.
 
 Most Forms and Serializers limit you to doing validation on a single
@@ -14,12 +14,12 @@ field, and then have one single `clean` method where you can do
 muti-field validation logic. The problem with this is that if you have a
 large number of optional fields which depend on each other, your
 validation code can quickly become unreadable, unmaintainable and
-non-resuable.
+non-reusable.
 
 The aim of Required is to do the following:
 
--  To have a declaritave way to encode validation logic
--  Allow you to maintain extreamly complex multi field valiation logic
+-  To have a declarative way to encode validation logic
+-  Allow you to maintain extremely complex multi field validation logic
 -  Allow you to reuse your validation logic easily
 -  Be flexible with what you want to validate
 
@@ -37,7 +37,7 @@ pip install required
 
 Lets start with a quick example. 
 
-You want to validate some business rules on some optional input paramaters (for example to a API endpoint or function). They are `start_date` and `end_date`.
+You want to validate some business rules on some optional input parameters (for example to a API endpoint or function). They are `start_date` and `end_date`.
 
 The business rules:
 
