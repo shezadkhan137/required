@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import six
+import inspect
+
 from copy import deepcopy
 from collections import defaultdict
-from functools import wraps
 
 from .expressions import RExpression
 
@@ -158,9 +160,23 @@ class RequirementError(Exception):
 
 def validate(requires):
     def validate_decorator(func):
-        @wraps(func)
+        if six.PY3:
+            fullargspec = inspect.getfullargspec(func)
+            inspected_args = fullargspec.args or ()
+            inspected_defaults = fullargspec.defaults or ()
+            inspected_kwonlyargs_defaults = fullargspec.kwonlydefaults or {}
+        else:
+            argspec = inspect.getargspec(func)
+            inspected_args = argspec.args or ()
+            inspected_defaults = argspec.defaults or ()
+            inspected_kwonlyargs_defaults = {}
+
+        @six.wraps(func)
         def func_wrapper(*args, **kwargs):
-            requires.validate(kwargs)
+            args_as_dict = dict(zip(inspected_args, args + inspected_defaults))
+            args_as_dict.update(inspected_kwonlyargs_defaults)
+            args_as_dict.update(kwargs)
+            requires.validate(args_as_dict)
             return func(*args, **kwargs)
         return func_wrapper
     return validate_decorator

@@ -1,6 +1,7 @@
+# -*- coding: utf-8 -*-
 import pytest
 
-from required import Requires, R, RequirementError
+from required import Requires, R, RequirementError, validate
 
 
 class TestRequires(object):
@@ -326,3 +327,70 @@ class TestRequires(object):
 
         data = {"x": 1, "y": [1, 2]}
         requires.validate(data)
+
+
+class TestDecorator(object):
+
+    def test_required_decorator_works_when_called_with_kwargs(self):
+        requires = Requires("x", R("x") > R("y"))
+
+        @validate(requires)
+        def somefunction(x, y):
+            return x, y
+
+        with pytest.raises(RequirementError):
+            somefunction(x=1, y=2)
+
+        somefunction(x=2, y=1)
+
+    def test_required_decorator_works_when_called_with_args(self):
+        requires = Requires("x", R("x") > R("y"))
+
+        @validate(requires)
+        def somefunction(x, y):
+            return x, y
+
+        with pytest.raises(RequirementError):
+            somefunction(0, 2)
+
+        somefunction(x=2, y=0)
+
+    def test_required_decorator_works_when_called_with_args_kwargs(self):
+        requires = Requires("x", R("x") > R("y"))
+
+        @validate(requires)
+        def somefunction(x, y):
+            return x, y
+
+        with pytest.raises(RequirementError):
+            somefunction(10, y=20)
+
+        somefunction(20, y=10)
+
+    def test_required_decorator_works_when_called_with_star(self):
+        requires = Requires("x", R("x") > R("y"))
+
+        @validate(requires)
+        def somefunction(x, y):
+            return x, y
+
+        with pytest.raises(RequirementError):
+            somefunction(*(11, 21))
+
+        with pytest.raises(RequirementError):
+            somefunction(11 *(21, ))
+
+        somefunction(*(21, 11))
+
+    def test_required_decorator_works_with_defaults(self):
+        requires = Requires("x", R("x") > R("y"))
+
+        @validate(requires)
+        def somefunction(x=1, y=2):
+            return x, y
+
+        with pytest.raises(RequirementError):
+            somefunction()
+
+        somefunction(y=0)
+        somefunction(x=3)
