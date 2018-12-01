@@ -4,11 +4,8 @@ import re
 
 from setuptools import setup, find_packages
 
-try:
-    import pypandoc
-except (IOError, ImportError):
-    pypandoc = None
-
+with open('README.md') as f:
+    long_description = f.read()
 
 ###################################################################
 
@@ -77,7 +74,8 @@ if __name__ == "__main__":
         maintainer=find_meta("author"),
         maintainer_email=find_meta("email"),
         keywords=KEYWORDS,
-        long_description=pypandoc.convert(read("README.md"), to="rst", format="markdown_github") if pypandoc else "",
+        long_description=long_description,
+        long_description_content_type='text/markdown',
         packages=PACKAGES,
         package_dir={"": "src"},
         zip_safe=False,
