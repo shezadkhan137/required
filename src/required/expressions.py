@@ -5,6 +5,12 @@ import six
 import operator
 
 
+class ResolveError(Exception):
+    def __init__(self, missing_field, *args, **kwargs):
+        super(ResolveError, self).__init__(*args, **kwargs)
+        self.missing_field = missing_field
+
+
 class RExpression(object):
 
     def error(self, key, key_dep, data):
@@ -139,9 +145,12 @@ class R(object):
         return self.field
 
     def _resolve(self, data):
-        if isinstance(self.field, FieldOp):
-            return self.field._resolve(data)
-        return data[self.field]
+        try:
+            if isinstance(self.field, FieldOp):
+                return self.field._resolve(data)
+            return data[self.field]
+        except KeyError:
+            raise ResolveError(self.field, 'missing key %s in data' % self.field)
 
     def in_(self, *container):
         return In(self, *container)
