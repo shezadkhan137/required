@@ -30,7 +30,10 @@ CLASSIFIERS = [
     "Programming Language :: Python :: Implementation :: CPython",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-INSTALL_REQUIRES = ["six"]
+INSTALL_REQUIRES = [
+    "six",
+    "lark-parser"
+]
 
 ###################################################################
 
@@ -78,6 +81,8 @@ if __name__ == "__main__":
         long_description_content_type='text/markdown',
         packages=PACKAGES,
         package_dir={"": "src"},
+        package_data={"": ['src/required/grammer.lark']},
+        include_package_data=True,
         zip_safe=False,
         classifiers=CLASSIFIERS,
         install_requires=INSTALL_REQUIRES,

@@ -4,15 +4,10 @@ from __future__ import unicode_literals
 import six
 import operator
 
-
-class ResolveError(Exception):
-    def __init__(self, missing_field, *args, **kwargs):
-        super(ResolveError, self).__init__(*args, **kwargs)
-        self.missing_field = missing_field
+from .exceptions import ResolveError
 
 
 class RExpression(object):
-
     def error(self, key, key_dep, data):
         raise NotImplementedError
 
@@ -22,6 +17,8 @@ class RExpression(object):
     def _resolve(self, val, data):
         if isinstance(val, R):
             return val._resolve(data)
+        if isinstance(val, RExpression):
+            return val(data)
         return val
 
     def __hash__(self):
@@ -32,7 +29,6 @@ class RExpression(object):
 
 
 class In(RExpression):
-
     def __init__(self, field, values):
         self.field = field
         self.values = values
@@ -62,7 +58,9 @@ class In(RExpression):
             key=key, dep=dep, values=" or ".join(map(str, values)))
 
     def __hash__(self):
-        return hash(self.field) + sum(map(hash, self.values))
+        if isinstance(self.values, R):
+            return hash(hash(self.field) + hash(self.values))
+        return hash(hash(self.field) + sum(map(hash, self.values)))
 
 
 class GenericOp(RExpression):
@@ -98,6 +96,30 @@ class GenericOp(RExpression):
     def __hash__(self):
         return hash(self.lhs) + hash(self.rhs) + hash(self.get_operator())
 
+    def __and__(self, other):
+        return And(self, other)
+
+    def __or__(self, other):
+        return Or(self, other)
+
+
+class And(GenericOp):
+
+    @staticmethod
+    def op(lhs_value, rhs_value):
+        return lhs_value and rhs_value
+
+    error_msg = "{key} requires {dep} and {value} to be true"
+
+
+class Or(GenericOp):
+
+    @staticmethod
+    def op(lhs_value, rhs_value):
+        return lhs_value or rhs_value
+
+    error_msg = "{key} requires {dep} or {value} to be true"
+
 
 class Lte(GenericOp):
     op = operator.le
@@ -130,7 +152,6 @@ class NotEq(GenericOp):
 
 
 class R(object):
-
     def __init__(self, field):
         self.field = field
 
@@ -150,7 +171,8 @@ class R(object):
                 return self.field._resolve(data)
             return data[self.field]
         except KeyError:
-            raise ResolveError(self.field, 'missing key %s in data' % self.field)
+            raise ResolveError(self.field,
+                               'missing key %s in data' % self.field)
 
     def in_(self, *container):
         return In(self, *container)
@@ -219,9 +241,10 @@ class FieldOp(object):
         div_op: "/",
     }
 
-    def __init__(self, operator, *args):
+    def __init__(self, operator, *args, **kwargs):
         self.operator = operator
         self.args = args
+        self.kwargs = kwargs
 
     def get_fields(self):
         fields = set()
@@ -231,9 +254,19 @@ class FieldOp(object):
                     fields.add(field)
         return fields
 
+    def _resolve_arg(self, arg, data):
+        if isinstance(arg, R):
+            return arg._resolve(data)
+        return arg
+
     def _resolve(self, data):
-        resolved_args = tuple((arg._resolve(data) if isinstance(arg, R) else arg for arg in self.args))
-        return self.operator(*resolved_args)
+        resolved_args = tuple(
+            (self._resolve_arg(arg, data) for arg in self.args))
+        resolved_kwargs = {
+            key: self._resolve_arg(value, data)
+            for key, value in self.kwargs.items()
+        }
+        return self.operator(*resolved_args, **resolved_kwargs)
 
     def error(self):
         if len(self.args) == 2:
@@ -249,9 +282,9 @@ class FieldOp(object):
 
         arg_errors = map(self.resolve_error, self.args)
         return "{op}({args})".format(
-                op=self.OP_LOOKUP.get(self.operator, self.operator.__name__),
-                args=",".join(arg_errors),
-            )
+            op=self.OP_LOOKUP.get(self.operator, self.operator.__name__),
+            args=",".join(arg_errors),
+        )
 
     def resolve_error(self, arg):
         return arg.error() if isinstance(arg, R) else arg
@@ -260,5 +293,5 @@ class FieldOp(object):
         return hash(self.operator) + sum(map(hash, self.args))
 
 
-def Func(func, *args):
-    return R(FieldOp(func, *args))
+def Func(func, *args, **kwargs):
+    return R(FieldOp(func, *args, **kwargs))

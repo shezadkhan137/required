@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from required.expressions import (
     R, Lte, Lt, Gte, Gt, Eq, NotEq,
-    In
+    In, And, Or
 )
 
 
@@ -68,3 +68,23 @@ class TestComparisonOperators(object):
         op = In(field, values)
         assert op({"x": 1, "y": (1, 2, 3)})
         assert not op({"x": 10, "y": (1, 2, 3)})
+
+    def test_and_operator(self):
+        exp1 = R("x") == 1
+        exp2 = R("y") == 2
+
+        op = And(exp1, exp2)
+
+        assert op({"x": 1, "y": 2})
+        assert not op({"x": 10, "y": 2})
+
+    def test_or_operator(self):
+        exp1 = R("x") == 1
+        exp2 = R("y") == 2
+
+        op = Or(exp1, exp2)
+
+        assert op({"x": 1, "y": 2})
+        assert op({"x": 1, "y": 10})
+        assert op({"x": 10, "y": 2})
+        assert not op({"x": 10, "y": 10})

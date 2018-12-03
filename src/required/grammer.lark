@@ -1,0 +1,46 @@
+start: _statements
+     | _ANYTHING* "Requires {" _statements "}" _ANYTHING*
+
+_statements: [_NEWLINE] statement (_NEWLINE statement)* [_NEWLINE]
+
+statement: rule (";" _spacing rule _spacing )* _spacing [";"]
+
+rule: comparison _spacing "->" _spacing comparison
+
+comparison: VAR                                                 -> var_comparison
+          | expression _spacing COMP_OP _spacing expression     -> expression_comparison
+
+expression: VAR                                                 -> var_expression
+          | NUMBER                                              -> number_expression
+          | SPECIAL                                             -> special_expression
+          | ESCAPED_STRING                                      -> string_expression
+          | func                                                -> func_expression
+          | "(" expression _spacing OP _spacing expression ")"  -> op_expression
+
+func: VAR "(" [arglist] ")"
+
+arglist: (expression _spacing ",")* _spacing expression [","]
+
+_spacing: _WHITESPACE*
+
+
+COMP_OP: "=="
+       | ">"
+       | "<"
+       | ">="
+       | "<="
+       | "in"
+       | "!="
+
+OP: ("+" | "-" | "*" | "/")
+COMMENT: /#[^\n]*/
+SPECIAL: ("<empty>" | "<result>")
+
+_NEWLINE: ( /\r?\n\s[\t ]*/ | COMMENT )+
+_WHITESPACE: " "
+_ANYTHING: /.|\s/
+
+
+%import common.CNAME -> VAR
+%import common.SIGNED_NUMBER -> NUMBER
+%import common.ESCAPED_STRING

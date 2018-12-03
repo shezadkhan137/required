@@ -1,7 +1,10 @@
 from __future__ import absolute_import, division, print_function
 
-from .requires import Requires, RequirementError, validate, empty
+from .requires import Requires, empty
 from .expressions import R, Func
+from .decorator import validate
+from .dsl import init_parser, init_transformer, build_requirements_factory
+from .exceptions import RequiredSyntaxError, RequirementError, ResolveError, DecoratorError
 
 __version__ = "0.3.4.post1"
 
@@ -18,9 +21,15 @@ __copyright__ = "Copyright (c) 2018 Shezad Khan"
 
 __all__ = [
     "Requires",
-    "RequirementError",
     "R",
     "Func",
     "empty",
     "validate",
+    "build_requirements_factory",
+    "init_parser",
+    "init_transformer",
+    "RequirementError",
+    "RequiredSyntaxError",
+    "ResolveError",
+    "DecoratorError",
 ]
