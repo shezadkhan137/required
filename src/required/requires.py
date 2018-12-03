@@ -3,11 +3,12 @@ from __future__ import unicode_literals
 
 import six
 import inspect
+import itertools
 
 from copy import deepcopy
 from collections import defaultdict
 
-from .expressions import RExpression
+from .expressions import RExpression, R
 
 
 class Empty(object):
@@ -34,6 +35,30 @@ class Dependency(object):
         return self.message
 
 
+class PartialDependency(object):
+
+    def __init__(self, from_, keys=None):
+        self._keys = keys or defaultdict(set)
+        if isinstance(from_, RExpression):
+            # partial on the from_ value
+            from_names = from_.get_fields()
+            assert len(from_names) == 1, "from_ must only contain one field"
+            from_name = list(from_names)[0]
+            self._keys[from_name].add(from_)
+
+    def __add__(self, other):
+        new_keys = defaultdict(set)
+        for key, value in itertools.chain(self._keys.items(), other._keys.items()):
+            new_keys[key] |= (value)
+        return PartialDependency(None, new_keys)
+
+    def __contains__(self, value):
+        return value in self._keys
+
+    def get(self, value):
+        return self._keys[value]
+
+
 class Requires(object):
     """
     """
@@ -41,35 +66,29 @@ class Requires(object):
     empty = empty
 
     def __init__(self, from_, dep, message=None):
-        # process from_ partial
-        self._from_keys = set()
-        from_name = self._get_from_name(from_)
-        if from_name:
-            self._from_keys.add(from_name)
 
-        dep_obj = self._get_dep_object(from_, dep, message)
-        self.adj = {from_: (dep_obj, )}
+        if isinstance(from_, six.string_types):
+            from_ = R(from_)
 
-    def _get_from_name(self, from_):
-        if isinstance(from_, RExpression):
-            # partial on the from_ value
-            from_names = from_.get_fields()
-            assert len(from_names) == 1, "from_ must only contain one field"
-            from_name = list(from_names)[0]
-            return from_name
-        return None
+        self.partials = PartialDependency(from_)
+        self.adj = {
+            self._hash(from_): (self._get_dep_object(from_, dep, message), )
+        }
+
+    def _hash(self, obj):
+        return hash(obj)
 
     def _get_dep_object(self, from_, dep, message):
         if isinstance(dep, RExpression):
             # Complex dependency
-            dep_names = dep.get_fields() - {from_}
+            dep_names = dep.get_fields() - from_.get_fields()
             assert len(dep_names) <= 1, "Currently do not support complex dependencies in expressions"
             if len(dep_names) == 1:
                 dep_name = list(dep_names)[0]
                 # expression dependecy
                 return Dependency(name=dep_name, expression=dep, message=message)
             # self expression depedency
-            return Dependency(name=from_, expression=dep, message=message)
+            return Dependency(name=list(from_.get_fields())[0], expression=dep, message=message)
         # flat full dependency
         return Dependency(name=dep, message=message)
 
@@ -79,37 +98,42 @@ class Requires(object):
         d = defaultdict(list)
         for key, value in combined:
             d[key].extend(list(value))
-        self._from_keys = self._from_keys.union(other._from_keys)
+        partials = self.partials + other.partials
+
         new = deepcopy(self)
         new.adj = d
+        new.partials = partials
+
         return new
 
     def deps(self, key, value, seen=None):
         # DFS of the dependency graph
 
-        partial_key = (key, value) if key in self._from_keys else None
+        partial_key = (key, value) if key in self.partials else None
 
         # use of seen so we terminate and don't blow the stack
         seen = seen if seen else set()
         seen.add(partial_key or key)
 
-        if key not in self.adj and partial_key is None:
+        hash_key_lookup = self._hash(R(key))
+
+        if hash_key_lookup not in self.adj and partial_key is None:
             # key has no dependencies or partial dependencies
             return []
 
-        rels = self.adj.get(key, list())
+        rels = self.adj.get(hash_key_lookup, list())
 
         if partial_key:
             # We need to resolve the partial dependency
             # to see if it is valid.
             lookup = dict((partial_key,))
             partial_rels = []
-            for exp in self.adj.keys():
-                if isinstance(exp, RExpression):
-                    if exp(lookup):
-                        dependencies_from_partial = self.adj.get(exp)
-                        for dep in dependencies_from_partial:
-                            partial_rels.append(dep)
+            for exp in self.partials.get(key):
+                if exp(lookup):
+                    hash_exp_lookup = self._hash(exp)
+                    dependencies_from_partial = self.adj.get(hash_exp_lookup)
+                    for dep in dependencies_from_partial:
+                        partial_rels.append(dep)
             rels.extend(partial_rels)
 
         deps = []

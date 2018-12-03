@@ -328,6 +328,27 @@ class TestRequires(object):
         data = {"x": 1, "y": [1, 2]}
         requires.validate(data)
 
+    def test_partial_dependency_greater_than(self):
+        requires = Requires(R("x") > 1, R("x") == R("y")) + Requires(R("x") < 1, R("x") != R("y"))
+
+        with pytest.raises(RequirementError):
+            data = {"x": 2, "y": 1}
+            requires.validate(data)
+
+        with pytest.raises(RequirementError):
+            data = {"x": 0, "y": 0}
+            requires.validate(data)
+
+        data = {"x": -1, "y": 0}
+        requires.validate(data)
+
+    def test_non_shorthand(self):
+        requires = Requires(R("x"), R("y"))
+
+        with pytest.raises(RequirementError):
+            data = {"x": 2}
+            requires.validate(data)
+
 
 class TestDecorator(object):
 
