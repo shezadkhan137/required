@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-from required import Requires, R, RequirementError, validate
+from required import Requires, R, RequirementError, validate, Func
 
 
 class TestRequires(object):
@@ -348,6 +348,56 @@ class TestRequires(object):
         with pytest.raises(RequirementError):
             data = {"x": 2}
             requires.validate(data)
+
+    def test_complex_multi_val_dep_missing_variables(self):
+
+        requires = Requires(R("x"), R("y") + R("z") == R("x"))
+
+        with pytest.raises(RequirementError):
+            data = {"x": 2}
+            requires.validate(data)
+
+        with pytest.raises(RequirementError):
+            data = {"x": 2, "z": 1}
+            requires.validate(data)
+
+        with pytest.raises(RequirementError):
+            data = {"x": 2, "y": 1}
+            requires.validate(data)
+
+        data = {"x": 2, "y": 1, "z": 1}
+        requires.validate(data)
+
+    def test_complex_multi_val_dep_simple(self):
+
+        requires = Requires(R("x"), R("y") + R("z") == R("x"))
+
+        with pytest.raises(RequirementError):
+            data = {"x": 2, "y": 2, "z": 2}
+            requires.validate(data)
+
+        data = {"x": 2, "y": 1, "z": 1}
+        requires.validate(data)
+
+    def test_complex_multi_val_dep_with_function(self):
+        requires = Requires(R("x"), Func(len, R("y")) + Func(len, R("z")) == R("x"))
+
+        with pytest.raises(RequirementError):
+            data = {"x": 2, "y": [1, 1], "z": [2]}
+            requires.validate(data)
+
+        data = {"x": 3, "y": [1, 1], "z": [2]}
+        requires.validate(data)
+
+    def test_complex_multi_val_dep_with_function_gte(self):
+        requires = Requires(R("x"), Func(len, R("y")) + Func(len, R("z")) > R("x"))
+
+        with pytest.raises(RequirementError):
+            data = {"x": 10, "y": [1, 1], "z": [2]}
+            requires.validate(data)
+
+        data = {"x": 2, "y": [1, 1], "z": [2]}
+        requires.validate(data)
 
 
 class TestDecorator(object):

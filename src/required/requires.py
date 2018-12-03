@@ -8,7 +8,7 @@ import itertools
 from copy import deepcopy
 from collections import defaultdict
 
-from .expressions import RExpression, R
+from .expressions import RExpression, R, ResolveError
 
 
 class Empty(object):
@@ -72,7 +72,7 @@ class Requires(object):
 
         self.partials = PartialDependency(from_)
         self.adj = {
-            self._hash(from_): (self._get_dep_object(from_, dep, message), )
+            self._hash(from_): self._get_dep_object(from_, dep, message)
         }
 
     def _hash(self, obj):
@@ -82,15 +82,12 @@ class Requires(object):
         if isinstance(dep, RExpression):
             # Complex dependency
             dep_names = dep.get_fields() - from_.get_fields()
-            assert len(dep_names) <= 1, "Currently do not support complex dependencies in expressions"
-            if len(dep_names) == 1:
-                dep_name = list(dep_names)[0]
-                # expression dependecy
-                return Dependency(name=dep_name, expression=dep, message=message)
+            if len(dep_names) >= 1:
+                return tuple(Dependency(name=dep_name, expression=dep, message=message) for dep_name in dep_names)
             # self expression depedency
-            return Dependency(name=list(from_.get_fields())[0], expression=dep, message=message)
+            return (Dependency(name=list(from_.get_fields())[0], expression=dep, message=message), )
         # flat full dependency
-        return Dependency(name=dep, message=message)
+        return (Dependency(name=dep, message=message), )
 
     def __add__(self, other):
         assert isinstance(other, Requires)
@@ -159,13 +156,21 @@ class Requires(object):
                 )
 
             if dependency_value is not self.empty:
-                if not dependency_value(data):
-                    error_message = dependency.get_error_message() or dependency_value.error(field, dependency_name, data)
+                try:
+                    if not dependency_value(data):
+                        error_message = dependency.get_error_message() or dependency_value.error(field, dependency_name, data)
+                        raise RequirementError(
+                            field,
+                            dependency_name,
+                            dependency_value,
+                            error_message
+                        )
+                except ResolveError as e:
                     raise RequirementError(
                         field,
                         dependency_name,
-                        dependency_value,
-                        error_message
+                        None,
+                        "%s requires '%s' to be present" % (field, e.missing_field)
                     )
 
     def validate(self, data):
