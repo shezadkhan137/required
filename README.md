@@ -38,14 +38,13 @@ def calculate_sum(positive_number, negative_number):
     return positive_number + negative_number
     
 # the following will raise a validation exception
-# RequirementError: negative_number requires negative_number to be less than 0.0
 calculate_sum(1, 1)
 
 # this will pass validation
 calculate_sum(1, -1) # 0
 ```
 
-If you want to have other things in your function docstring, you can wrap the validation rules inside of `Requires { }` as shown below:
+If you want to have other information in the docstring, the validation rules can be wrapped inside of `Requires { }` as shown below:
 
 ```python
 
@@ -64,11 +63,11 @@ def calculate_sum(positive_number, negative_number):
     return positive_number + negative_number
 ```
 
-Validation rules are written in the doc string of the function. They have the form: 
+Validation rules are written in the doc string of the function. They look like: 
 
 `[param] -> [expression_1] [comparator] [expression_2]`
 
-This means when `param` is present, it requires `expression_1 [comparator] expression_2` to evaluate to true. 
+When `param` is present, it requires `expression_1 [comparator] expression_2` to evaluate to true. 
 
 The most simple expressions are just variables passed into the function to validate, however they can be more complex. See cookbook for more examples.
 

@@ -6,7 +6,7 @@ from .decorator import validate
 from .dsl import init_parser, init_transformer, build_requirements_factory
 from .exceptions import RequiredSyntaxError, RequirementError, ResolveError, DecoratorError
 
-__version__ = "0.3.4.post1"
+__version__ = "0.4.0"
 
 __title__ = "required"
 __description__ = "A easy dependency validator"
