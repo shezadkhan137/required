@@ -5,21 +5,10 @@
 [![Coverage Status](https://coveralls.io/repos/github/shezadkhan137/required/badge.svg?branch=master)](https://coveralls.io/github/shezadkhan137/required?branch=master)
 
 Required is a simple library which allows you to validate dependencies
-across multiple fields. The goal is to make writing things like Forms
-and Seralizers much easier by providing a declarative way to encode
-your complex validation logic.
+across multiple fields. The goal is to make writing things like forms, seralizers and functions much easier by providing a declarative way to encode validation logic. It aims to:
 
-Most Forms and Serializers limit you to doing validation on a single
-field, and then have one single `clean` method where you can do
-muti-field validation logic. The problem with this is that if you have a
-large number of optional fields which depend on each other, your
-validation code can quickly become unreadable, unmaintainable and
-non-reusable.
-
-The aim of Required is to do the following:
-
--  To have a declarative way to encode validation logic
--  Allow you to maintain extremely complex multi field validation logic
+-  Have a declarative way to encode validation logic
+-  Allow you to maintain validation logic easily
 -  Allow you to reuse your validation logic easily
 -  Be flexible with what you want to validate
 
@@ -35,120 +24,89 @@ pip install required
 
 ## Quickstart
 
-Lets start with a quick example. 
-
-You want to validate some business rules on some optional input parameters (for example to a API endpoint or function). They are `start_date` and `end_date`.
-
-The business rules:
-
-
-*  `start_date`
-   *  Only valid with `end_date`
-   *  Must be after 2017
-   *  Must be before 2018
-
-*  `end_date` - filter events which start before this date
-
-   *  Only valid with `start_date`
-   *  Must be before 2018
-   *  Must be after `start_date`
-
-Theses rules can be written with `required` as follows:
+You can use required in a number of ways. The easiest way is to use the `validate` decorator to validate inputs to function calls. 
 
 ```python
-import datetime
-from required import Requires, R
+from required import validate
 
-# start_date requirements
-start_requires_end = Requires("start_date", "end_date")
-start_after_2017 = Requires("start_date", R("start_date") > datetime.date(2017, 1, 1))
-start_before_2018 = Requires("start_date", R("start_date") < datetime.date(2018, 1, 1))
+@validate
+def calculate_sum(positive_number, negative_number):
+    """
+    positive_number -> positive_number > 0
+    negative_number -> negative_number < 0
+    """
+    return positive_number + negative_number
+    
+# the following will raise a validation exception
+# RequirementError: negative_number requires negative_number to be less than 0.0
+calculate_sum(1, 1)
 
-# end_date requirements
-end_requires_start = Requires("end_date", "start_date")
-end_before_2018 = Requires("end_date", R("end_date") < datetime.date(2018, 1, 1))
-end_after_start = Requires("end_date", R("end_date") > R("start_date"))
+# this will pass validation
+calculate_sum(1, -1) # 0
 ```
 
-The above introduces the two important concepts of required; the `Requires` and `R` objects.
+Validation rules are written in the doc string of the function. They have the form: 
 
-The `Requires` object is used to define pair-wise dependencies. It has two non-optional arguments, the first one is the target (key) of the constraint, and the second argument is the constraint itself. `Requires("start_date", "end_date")` means "start_date requires end_date to be present".
-
-The `R` object acts as a placeholder for a future value. If you require a future value of `end_date` to be more than `start_date`, you would write it as `R("end_date") > R("start_date)`. Any such expression can be used as the constraint for the `Requires` object. 
-
-The last step is simply summing all the  `Requires` together in order to combine the rules:
-
-```python
-# combine all the rules
-all_rules = (
-    start_requires_end + 
-    start_after_2017 +
-    start_before_2018 +
-    end_requires_start +
-    end_before_2018 +
-    end_after_start
-)
+```
+[param] -> [expression_1] [comparator] [expression_2]
 ```
 
-Once you have combined all the rules, you can simply call validate on the `all_rules` object with a dict of your data you want to validate.
+This means when `param` is present, it requires `expression_1 [comparator] expression_2` to evaluate to true. The most simple expressions are just variables passed into the function to validate, however they can be more complex. See cookbook for more examples. The comparator can one of the standard python comparator operations; `==`, `!=`, `in`, `>=` `<=`, `>`, `<`.
+
+If you want to have other things in your function docstring, you can wrap the validation rules inside of `Requires { }` as shown below:
 
 ```python
-data = {
-    "start_date": datetime.date(2017, 10, 10),
-    "end_date": datetime.date(2017, 10, 9),
-}
 
-all_rules.validate(data)  
-# RequirementError: end_date requires end_date to be greater than start_date
-```
-
-The above not only tells you that the data was invalid, but which rule it broke. The following correct data passes validation:
-
-```python
-data = {
-    "start_date": datetime.date(2017, 10, 10),
-    "end_date": datetime.date(2017, 10, 11),
-}
-
-all_rules.validate(data)  
+@validate
+def calculate_sum(positive_number, negative_number):
+    """
+    Other documentation relating to calculate_sum
+    
+    Requires {
+        positive_number -> positive_number > 0
+        negative_number -> negative_number < 0
+    }
+    
+    You can also put information after the requires rules
+    """
+    return positive_number + negative_number
 ```
 
 ## Cookbook
 
-The following shows some recipes for forming validation rules with the `R` object.
+The following shows some examples for writing validation rules
 
-```python
-# Arithmetic on the `R` object follows normal maths rules.
-R("x", R("x") + 1 < 1)
-R("x", R("x") - R("y") == 1)
+```
+
+# Arithmetic on the objects follow normal maths rules.
+# you need to put brackets to define expressions
+x -> (x + 1) < 1
+x -> (x - y) == 1
 
 # A value `x` needs to be in an array
-R("x", R("x").in_(array))
+x -> x in arr
 
 # The length of x must be 10
-R("x", R("x").length() == 10)
+# see section on registering functions
+x -> len(x) == 10
 
 # The length of x and y must be the same
-R("x", R("x").length() == R("y").length())
+x -> len(x) == len(y)
 
 # when x is present y must not be present
-# from required import empty
-R("x", R("y") == empty)
+# TODO: not implemented in DSL yet
+x -> x == <empty>
 
 # x must be equal to the return value of a function
-# this is useful if what you are checking is against
-# is non-pure eg. current time
+x -> x == func(x)
 
-f = lambda x: 1
-Requires("x", R("x") == Func(f, R("x")))
+# Partial dependencies can be also specified
 
-# the above can be used to ensure that a value is not in the past
-R("start_date", R("start_date") > Func(datetime.now))
+# when x == 1 then y must be 2
+x == 1 -> y == 2
 
-# Partial dependencies can be also specified with R objects
-
-# x requires y when x is equal to 1
-Requires(R("x") == 1, "y")
+# when x == 1 then y must be set
+x == 1 -> y
 ```
 
 ## Contributing 
