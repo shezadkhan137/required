@@ -51,7 +51,11 @@ Validation rules are written in the doc string of the function. They have the fo
 [param] -> [expression_1] [comparator] [expression_2]
 ```
 
-This means when `param` is present, it requires `expression_1 [comparator] expression_2` to evaluate to true. The most simple expressions are just variables passed into the function to validate, however they can be more complex. See cookbook for more examples. The comparator can one of the standard python comparator operations; `==`, `!=`, `in`, `>=` `<=`, `>`, `<`.
+This means when `param` is present, it requires `expression_1 [comparator] expression_2` to evaluate to true. 
+
+The most simple expressions are just variables passed into the function to validate, however they can be more complex. 
+
+See cookbook for more examples. The comparator can one of the standard python comparator operations; `==`, `!=`, `in`, `>=` `<=`, `>`, `<`.
 
 If you want to have other things in your function docstring, you can wrap the validation rules inside of `Requires { }` as shown below:
 
