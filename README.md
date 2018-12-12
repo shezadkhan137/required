@@ -45,18 +45,6 @@ calculate_sum(1, 1)
 calculate_sum(1, -1) # 0
 ```
 
-Validation rules are written in the doc string of the function. They have the form: 
-
-```
-[param] -> [expression_1] [comparator] [expression_2]
-```
-
-This means when `param` is present, it requires `expression_1 [comparator] expression_2` to evaluate to true. 
-
-The most simple expressions are just variables passed into the function to validate, however they can be more complex. 
-
-See cookbook for more examples. The comparator can one of the standard python comparator operations; `==`, `!=`, `in`, `>=` `<=`, `>`, `<`.
-
 If you want to have other things in your function docstring, you can wrap the validation rules inside of `Requires { }` as shown below:
 
 ```python
@@ -75,6 +63,18 @@ def calculate_sum(positive_number, negative_number):
     """
     return positive_number + negative_number
 ```
+
+Validation rules are written in the doc string of the function. They have the form: 
+
+`[param] -> [expression_1] [comparator] [expression_2]`
+
+This means when `param` is present, it requires `expression_1 [comparator] expression_2` to evaluate to true. 
+
+The most simple expressions are just variables passed into the function to validate, however they can be more complex. See cookbook for more examples.
+
+The comparator can be one of the standard python comparator operations; `==`, `!=`, `in`, `>=` `<=`, `>`, `<`.
+
+
 
 ## Cookbook
 
@@ -112,6 +112,43 @@ x == 1 -> y == 2
 # when x == 1 then y must be set
 x == 1 -> y
 ```
+
+## Registering callables
+
+You can register callables into the validation scope. This is useful when you want to call normal python builtins or custom callables. 
+
+```python
+from required import validate
+
+scoped_validate = validate.register_callables({
+ "len": len,
+ "abs": abs
+})
+
+@scoped_validate
+def return_first_element(arr):
+    """
+    arr -> len(arr) >= 1
+    """
+    return arr[0]
+
+
+# validation scoped callables can also be nested
+# len, abs and my_func are available in the second_scoped_validate decorator
+
+second_scoped_validate = scoped_validate.register_callables({
+    "my_func": my_func
+})
+
+# or inserted at function level
+@validate(callable_dict={"new_func": new_func})
+def other_function(var):
+    """
+    var -> new_func(var) >= 1
+    """
+    return var
+```
+
 
 ## Contributing 
 
