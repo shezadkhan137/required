@@ -2,13 +2,13 @@
 from __future__ import unicode_literals
 
 import six
-import inspect
 import itertools
 
 from copy import deepcopy
 from collections import defaultdict
 
 from .expressions import RExpression, R, ResolveError
+from .exceptions import RequirementError
 
 
 class Empty(object):
@@ -34,9 +34,16 @@ class Dependency(object):
     def get_error_message(self):
         return self.message
 
+    def __eq__(self, other):
+        return (self.name == other.name and self.expression == other.expression
+                and self.message == other.message)
+
+    def __hash__(self):
+        return hash(
+            hash(self.name) + hash(self.expression) + hash(self.message))
+
 
 class PartialDependency(object):
-
     def __init__(self, from_, keys=None):
         self._keys = keys or defaultdict(set)
         if isinstance(from_, RExpression):
@@ -48,7 +55,8 @@ class PartialDependency(object):
 
     def __add__(self, other):
         new_keys = defaultdict(set)
-        for key, value in itertools.chain(self._keys.items(), other._keys.items()):
+        for key, value in itertools.chain(self._keys.items(),
+                                          other._keys.items()):
             new_keys[key] |= (value)
         return PartialDependency(None, new_keys)
 
@@ -57,6 +65,9 @@ class PartialDependency(object):
 
     def get(self, value):
         return self._keys[value]
+
+    def __eq__(self, other):
+        return self._keys == other._keys
 
 
 class Requires(object):
@@ -83,9 +94,14 @@ class Requires(object):
             # Complex dependency
             dep_names = dep.get_fields() - from_.get_fields()
             if len(dep_names) >= 1:
-                return tuple(Dependency(name=dep_name, expression=dep, message=message) for dep_name in dep_names)
+                return tuple(
+                    Dependency(name=dep_name, expression=dep, message=message)
+                    for dep_name in dep_names)
             # self expression depedency
-            return (Dependency(name=list(from_.get_fields())[0], expression=dep, message=message), )
+            return (Dependency(
+                name=list(from_.get_fields())[0],
+                expression=dep,
+                message=message), )
         # flat full dependency
         return (Dependency(name=dep, message=message), )
 
@@ -123,7 +139,7 @@ class Requires(object):
         if partial_key:
             # We need to resolve the partial dependency
             # to see if it is valid.
-            lookup = dict((partial_key,))
+            lookup = dict((partial_key, ))
             partial_rels = []
             for exp in self.partials.get(key):
                 if exp(lookup):
@@ -149,63 +165,27 @@ class Requires(object):
 
             if dependency_name not in data:
                 raise RequirementError(
-                    field,
-                    dependency_name,
-                    None,
-                    "%s requires '%s' to be present" % (field, dependency_name)
-                )
+                    field, dependency_name, None,
+                    "%s requires '%s' to be present" % (field,
+                                                        dependency_name))
 
             if dependency_value is not self.empty:
                 try:
                     if not dependency_value(data):
-                        error_message = dependency.get_error_message() or dependency_value.error(field, dependency_name, data)
-                        raise RequirementError(
-                            field,
-                            dependency_name,
-                            dependency_value,
-                            error_message
-                        )
+                        error_message = dependency.get_error_message(
+                        ) or dependency_value.error(field, dependency_name,
+                                                    data)
+                        raise RequirementError(field, dependency_name,
+                                               dependency_value, error_message)
                 except ResolveError as e:
                     raise RequirementError(
-                        field,
-                        dependency_name,
-                        None,
-                        "%s requires '%s' to be present" % (field, e.missing_field)
-                    )
+                        field, dependency_name, None,
+                        "%s requires '%s' to be present" % (field,
+                                                            e.missing_field))
 
     def validate(self, data):
         for key in data.keys():
             self._validate(key, data)
 
-
-class RequirementError(Exception):
-
-    def __init__(self, field=None, dependency_name=None, dependency_value=None, *args, **kwargs):
-        super(RequirementError, self).__init__(*args, **kwargs)
-        self.field = field
-        self.dependency_name = dependency_name
-        self.dependency_value = dependency_value
-
-
-def validate(requires):
-    def validate_decorator(func):
-        if six.PY3:
-            fullargspec = inspect.getfullargspec(func)
-            inspected_args = fullargspec.args or ()
-            inspected_defaults = fullargspec.defaults or ()
-            inspected_kwonlyargs_defaults = fullargspec.kwonlydefaults or {}
-        else:
-            argspec = inspect.getargspec(func)
-            inspected_args = argspec.args or ()
-            inspected_defaults = argspec.defaults or ()
-            inspected_kwonlyargs_defaults = {}
-
-        @six.wraps(func)
-        def func_wrapper(*args, **kwargs):
-            args_as_dict = dict(zip(inspected_args, args + inspected_defaults))
-            args_as_dict.update(inspected_kwonlyargs_defaults)
-            args_as_dict.update(kwargs)
-            requires.validate(args_as_dict)
-            return func(*args, **kwargs)
-        return func_wrapper
-    return validate_decorator
+    def __eq__(self, other):
+        return (self.adj == other.adj and self.partials == other.partials)
