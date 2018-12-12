@@ -154,6 +154,13 @@ statement_matches = [
         """,
         Requires(Func(custom_f, R("x")) == "hello", Func(custom_f, R("y")) == "world"),
         {"customf": custom_f}
+    ),
+    (
+        """
+        arr -> len(arr) >= 1
+        """,
+        Requires("arr", Func(len, R("arr")) >= 1),
+        {}
     )
 
 ]
