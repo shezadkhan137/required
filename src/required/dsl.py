@@ -8,7 +8,7 @@ from six.moves import reduce
 
 from lark import Lark, Transformer, v_args
 
-from .requires import Requires
+from .requires import Requires, empty
 from .expressions import R, Func
 from .exceptions import RequiredSyntaxError
 
@@ -44,6 +44,12 @@ class TreeToRequiresTransformer(Transformer, object):
 
     def string_expression(self, var):
         return var.value.strip('"')
+
+    def special_expression(self, var):
+        if var.value == '<empty>':
+            return empty
+        if var.value == '<result>':
+            raise NotImplementedError
 
     def op_expression(self, lhs, op, rhs, *others):
         op_lookup = {

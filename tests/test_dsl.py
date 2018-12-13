@@ -4,10 +4,17 @@ from __future__ import unicode_literals
 import pytest
 
 from required import Requires, R, Func
-from required.dsl import build_requirements_factory, init_transformer, init_parser
+from required.dsl import (
+    build_requirements_factory,
+    init_transformer,
+    init_parser,
+    empty
+)
+
 
 def custom_f(x):
     return x
+
 
 statement_matches = [
     ("x -> y", Requires("x", "y"), {}),
@@ -161,8 +168,21 @@ statement_matches = [
         """,
         Requires("arr", Func(len, R("arr")) >= 1),
         {}
+    ),
+    (
+        """
+        v1 -> v2 == <empty>
+        """,
+        Requires("v1", R("v2") == empty),
+        {}
+    ),
+    (
+        """
+        v1 -> v2 != <empty>
+        """,
+        Requires("v1", R("v2") != empty),
+        {}
     )
-
 ]
 
 
