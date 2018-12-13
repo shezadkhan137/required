@@ -1,4 +1,4 @@
-# required: Easy multi-field validation
+# required: A easy to use DSL for validation
 
 [![PyPI](https://img.shields.io/pypi/v/required.svg)]()
 [![Build Status](https://travis-ci.org/shezadkhan137/required.svg?branch=master)](https://travis-ci.org/shezadkhan137/required)
