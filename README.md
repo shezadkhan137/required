@@ -140,7 +140,7 @@ second_scoped_validate = scoped_validate.register_callables({
 })
 
 # or inserted at function level
-@validate(callable_dict={"new_func": new_func})
+@validate(callables_dict={"new_func": new_func})
 def other_function(var):
     """
     var -> new_func(var) >= 1
